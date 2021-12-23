@@ -5,7 +5,7 @@ import java.io.Serializable;
 
 @Entity
 @Table(name = "employee")
-public class Employee implements Serializable {
+public class Employee extends BaseEntity implements Serializable {
     @Id
     @Column(name="emp_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
