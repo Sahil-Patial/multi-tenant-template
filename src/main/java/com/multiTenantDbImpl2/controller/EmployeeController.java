@@ -3,7 +3,6 @@ package com.multiTenantDbImpl2.controller;
 import com.multiTenantDbImpl2.config.DbContextHolder;
 import com.multiTenantDbImpl2.repository.EmployeeRepository;
 import com.multiTenantDbImpl2.repository.model.Employee;
-//import com.multiTenantDbImpl2.service.impl.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
@@ -17,8 +16,6 @@ import java.util.logging.Logger;
 @RestController
 @RequestMapping("/api/service/employee")
 public class EmployeeController {
-//    @Autowired
-//    private EmployeeService employeeService;
     
     @Autowired
     private EmployeeRepository employeeRepository;
@@ -32,6 +29,8 @@ public class EmployeeController {
 
     @GetMapping("/findAll")
     public String findAll(@RequestHeader(name = "X-TENANT-ID") String env) { //  See Headers
+        final String methodName = "findAll()";
+        logger.log(Level.FINER, "Entering {}", methodName);
         try {
             String tenantStr = "persistence-tenant_emp_" + env;
             StringBuilder responseStr = new StringBuilder();
@@ -43,13 +42,14 @@ public class EmployeeController {
             }
             
             logger.log(Level.INFO, "Employee details were retrieved using GET method from {0} tenant", env);
+            logger.log(Level.FINER, "Exiting {}", methodName);
             
             System.out.println(responseStr.toString());
           
             return responseStr.toString();
         }
         catch(Exception e){
-            System.out.println(e.getMessage());
+            logger.log(Level.SEVERE, "Exiting from {0} with an error {1}",new Object[]{methodName, e});
             return "Failure";
         }
     }
@@ -65,8 +65,8 @@ public class EmployeeController {
             Employee empResponse = employeeRepository.save(employee);
             
             logger.log(Level.INFO, "Employee details were stored using POST method from {0} tenant", env);
-            
             logger.log(Level.FINER, "Exiting {}", methodName);
+            
             return new ResponseEntity<>(empResponse, HttpStatus.CREATED);
         }
         catch(Exception e){
