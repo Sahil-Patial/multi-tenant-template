@@ -10,8 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 import javax.sql.DataSource;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Configuration
@@ -23,7 +22,7 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
 
     private static final long serialVersionUID = 1L;
 
-    private Map<String, DataSource> dataSourcesMtApp = new TreeMap<>();
+    private transient HashMap<String, DataSource> dataSourcesMtApp = new HashMap<>();
 
     DataSourceBasedMultiTenantConnectionProviderImpl() {
     }
@@ -48,7 +47,11 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
     }
 
     private void readDataSource(){
-        String[] tenantDbs = env.getProperty("tenant-names").split(Pattern.quote("|"));
+        String tenantNames = new String();
+        if(env!=null && env.getProperty("tenant-names")!=null) {
+            tenantNames = Objects.requireNonNull(env.getProperty("tenant-names"));
+        }
+        String[] tenantDbs = tenantNames.isEmpty()? new String[0]:tenantNames.split(Pattern.quote("|"));
 
         for (String tenant : tenantDbs) {
             tenant = "persistence-" + tenant;
@@ -72,7 +75,7 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
     }
 
     private String initializeTenantIfLost(String tenantIdentifier) {
-        if (tenantIdentifier != DbContextHolder.getCurrentDb()) {
+        if (tenantIdentifier.equals(DbContextHolder.getCurrentDb())) {
             tenantIdentifier = DbContextHolder.getCurrentDb();
         }
         return tenantIdentifier;
