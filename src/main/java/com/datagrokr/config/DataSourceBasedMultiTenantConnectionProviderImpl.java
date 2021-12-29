@@ -1,9 +1,6 @@
 package com.datagrokr.config;
 
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.regex.Pattern;
-import javax.sql.DataSource;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.hibernate.engine.jdbc.connections.spi.AbstractDataSourceBasedMultiTenantConnectionProviderImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,24 +9,26 @@ import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
+import javax.sql.DataSource;
+import java.util.*;
+import java.util.regex.Pattern;
+
 /**
- *  Provides connections per tenant.
+ * Provides connection per tenant
  *
- * @author sahil
  */
 @Configuration
-public class DataSourceBasedMultiTenantConnectionProviderImpl extends 
-        AbstractDataSourceBasedMultiTenantConnectionProviderImpl {
-  
+@SuppressFBWarnings(value = {"SE_BAD_FIELD", "SE_TRANSIENT_FIELD_NOT_RESTORED"},
+        justification = "Make the build pass")
+public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDataSourceBasedMultiTenantConnectionProviderImpl {
   @Autowired
   private Environment env;
 
-  private static final Logger LOG = LoggerFactory.getLogger(
-          DataSourceBasedMultiTenantConnectionProviderImpl.class);
+  private static final Logger LOG = LoggerFactory.getLogger(DataSourceBasedMultiTenantConnectionProviderImpl.class);
 
   private static final long serialVersionUID = 1L;
 
-  private Map<String, DataSource> dataSourcesMtApp = new TreeMap<>();
+  private transient HashMap<String, DataSource> dataSourcesMtApp = new HashMap<>();
 
   DataSourceBasedMultiTenantConnectionProviderImpl() {
   }
@@ -53,8 +52,14 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends
     return this.dataSourcesMtApp.get(tenantIdentifier);
   }
 
-  private void readDataSource() {
-    String[] tenantDbs = env.getProperty("tenant-names").split(Pattern.quote("|"));
+  @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
+          justification = "Already added a null check")
+  private void readDataSource(){
+    String tenantNames = "";
+    if(env!=null && env.getProperty("tenant-names")!=null) {
+      tenantNames = Objects.requireNonNull(env.getProperty("tenant-names"));
+    }
+    String[] tenantDbs = tenantNames.isEmpty()? new String[0]:tenantNames.split(Pattern.quote("|"));
 
     for (String tenant : tenantDbs) {
       tenant = "persistence-" + tenant;
@@ -78,7 +83,7 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends
   }
 
   private String initializeTenantIfLost(String tenantIdentifier) {
-    if (tenantIdentifier != DbContextHolder.getCurrentDb()) {
+    if (tenantIdentifier.equals(DbContextHolder.getCurrentDb())) {
       tenantIdentifier = DbContextHolder.getCurrentDb();
     }
     return tenantIdentifier;

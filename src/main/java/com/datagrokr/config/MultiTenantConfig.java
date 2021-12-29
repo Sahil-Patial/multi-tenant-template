@@ -78,7 +78,7 @@ public class MultiTenantConfig {
     final HashMap<String, Object> properties = new HashMap<String, Object>();
     properties.put(org.hibernate.cfg.Environment
             .MULTI_TENANT, MultiTenancyStrategy.SCHEMA);
-    String tenant = DbContextHolder.getCurrentDb();
+
     properties.put(org.hibernate.cfg.Environment
             .MULTI_TENANT_CONNECTION_PROVIDER, connectionProvider);
     properties.put(org.hibernate.cfg.Environment
