@@ -86,37 +86,36 @@
 					</execution>
 				</executions>
 			</plugin>
-                        
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-checkstyle-plugin</artifactId>
-                            <version>3.1.2</version>
-                            <dependencies>
-                                <dependency>
-                                  <groupId>com.puppycrawl.tools</groupId>
-                                  <artifactId>checkstyle</artifactId>
-                                  <version>8.45.1</version>
-                                </dependency>
-                            </dependencies>
-                            <configuration>
-                                 <violationSeverity>warning</violationSeverity> 
-                                <consoleOutput>true</consoleOutput>
-                                <encoding>UTF-8</encoding>
-                                <configLocation>google_checks.xml</configLocation>
-                            </configuration>
-                            <executions>
-                                <execution>
-                                  <id>validate</id>
-                                  <phase>validate</phase>
-                                  <goals>
-                                    <goal>check</goal>
-                                  </goals>
-                                  <configuration>
-                                      <failOnViolation>true</failOnViolation>
-                                  </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-checkstyle-plugin</artifactId>
+					<version>3.1.2</version>
+					<dependencies>
+						<dependency>
+						  <groupId>com.puppycrawl.tools</groupId>
+						  <artifactId>checkstyle</artifactId>
+						  <version>8.45.1</version>
+						</dependency>
+					</dependencies>
+					<configuration>
+						 <violationSeverity>warning</violationSeverity>
+						<consoleOutput>true</consoleOutput>
+						<encoding>UTF-8</encoding>
+						<configLocation>google_checks.xml</configLocation>
+					</configuration>
+					<executions>
+						<execution>
+						  <id>validate</id>
+						  <phase>validate</phase>
+						  <goals>
+							<goal>check</goal>
+						  </goals>
+						  <configuration>
+							  <failOnViolation>false</failOnViolation>
+						  </configuration>
+						</execution>
+					</executions>
+				</plugin>
 		</plugins>
 	</build>
 
