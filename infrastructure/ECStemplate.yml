@@ -44,7 +44,7 @@ Parameters:
   ELBCanonicalHostedZoneId:
     Description: MT ECS Cluster ELB Canonical Hosted Zone ID
     Type: String
-    Default: 'Z08646671ZWIUG1H1WJGG'
+    Default: 'Z35SXDOTRQ7X7K'
   ELBDNSName:
     Description: MT ECS Cluster ELB DNS Name
     Type: 'AWS::SSM::Parameter::Value<String>'
