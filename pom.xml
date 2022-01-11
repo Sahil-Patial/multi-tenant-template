@@ -97,11 +97,7 @@
 				<version>${jib-maven-plugin.version}</version>
 				<configuration>
 					<to>
-						<image>docker.io/sharmanikhil1100/spring-boot-template</image>
-						<auth>
-							<username>sharmanikhil1100</username>
-							<password>Dockerpassword1</password>
-						</auth>
+						<image>001082169132.dkr.ecr.us-east-1.amazonaws.com/mt-template-poc</image>
 					</to>
 				</configuration>
 				<executions>
