@@ -5,6 +5,7 @@ import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Base class which is extended by another entity classes.
@@ -13,6 +14,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 
 @MappedSuperclass
+@Transactional
 public abstract class BaseEntity {
     
   @Column(name = "created_at", updatable = false)

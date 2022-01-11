@@ -1,6 +1,8 @@
 package com.datagrokr.config;
 
+import com.zaxxer.hikari.HikariDataSource;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.hibernate.MultiTenancyStrategy;
 import org.hibernate.engine.jdbc.connections.spi.AbstractDataSourceBasedMultiTenantConnectionProviderImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 import javax.sql.DataSource;
+import javax.xml.crypto.Data;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -63,23 +66,47 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
 
     for (String tenant : tenantDbs) {
       tenant = "persistence-" + tenant;
-      DataSource ds = DataSourceBuilder.create()
+
+      DataSource dsObject = DataSourceBuilder.create()
               .username(env.getProperty(tenant.concat(".username")))
               .password(env.getProperty(tenant.concat(".password")))
               .url(env.getProperty(tenant.concat(".url")))
               .driverClassName(env.getProperty("spring.datasource.driver-class-name"))
               .build();
+
+      HikariDataSource hikariDs = new HikariDataSource();
+      hikariDs.setDataSource(dsObject);
+      hikariDs.setUsername(env.getProperty(tenant.concat(".username")));
+      hikariDs.setPassword(env.getProperty(tenant.concat(".password")));
+      hikariDs.setJdbcUrl(env.getProperty(tenant.concat(".url")));
+      hikariDs.setDriverClassName(env.getProperty("spring.datasource.driver-class-name"));
+      hikariDs.setIdleTimeout(20000);
+      hikariDs.setMaximumPoolSize(200);
+      hikariDs.setMinimumIdle(50);
+      hikariDs.setLeakDetectionThreshold(20000);
+      DataSource ds = hikariDs.getDataSource();
+//      DataSource ds = DataSourceBuilder.create()
+//              .username(env.getProperty(tenant.concat(".username")))
+//              .password(env.getProperty(tenant.concat(".password")))
+//              .url(env.getProperty(tenant.concat(".url")))
+//              .driverClassName(env.getProperty("spring.datasource.driver-class-name"))
+//              .build();
       dataSourcesMtApp.put(tenant, ds);
     }
   }
 
   private DataSource defaultDataSource() {
-    return DataSourceBuilder.create()
-            .username(env.getProperty("persistence-tenant_emp_default.username"))
-            .password(env.getProperty("persistence-tenant_emp_default.password"))
-            .url(env.getProperty("persistence-tenant_emp_default.url"))
-            .driverClassName(env.getProperty("spring.datasource.driver-class-name"))
-            .build();
+    HikariDataSource hikariDs = new HikariDataSource();
+    hikariDs.setUsername(env.getProperty("persistence-tenant_emp_default.username"));
+    hikariDs.setPassword(env.getProperty("persistence-tenant_emp_default.password"));
+    hikariDs.setJdbcUrl(env.getProperty("persistence-tenant_emp_default.url"));
+    hikariDs.setDriverClassName(env.getProperty("spring.datasource.driver-class-name"));
+    hikariDs.setIdleTimeout(20000);
+    hikariDs.setMaximumPoolSize(200);
+    hikariDs.setMinimumIdle(50);
+    hikariDs.setLeakDetectionThreshold(20000);
+
+    return hikariDs.getDataSource();
   }
 
   private String initializeTenantIfLost(String tenantIdentifier) {

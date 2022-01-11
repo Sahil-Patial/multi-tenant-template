@@ -1,12 +1,9 @@
 package com.datagrokr.repository.model;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.io.Serializable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 /**
  * Entity class.
@@ -14,11 +11,13 @@ import javax.persistence.Table;
  * @author sahil
  */
 @Entity
+@Transactional
 @Table(name = "employee")
 public class Employee extends BaseEntity implements Serializable {
   @Id
   @Column(name = "emp_id")
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @SequenceGenerator(name = "emp_id_sequence", sequenceName = "public.employee_seq", allocationSize =1)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "emp_id_sequence")
   public Integer empId;
   
   @Column(name = "emp_name")

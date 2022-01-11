@@ -85,29 +85,11 @@ public class MultiTenantConfig {
             .MULTI_TENANT_IDENTIFIER_RESOLVER, tenantResolver);
     properties.put("hibernate.hbm2ddl.auto", env.getProperty("hibernate.hbm2ddl.auto"));
     properties.put("hibernate.dialect", env.getProperty("hibernate.dialect"));
+    properties.put(org.hibernate.cfg.Environment.CURRENT_SESSION_CONTEXT_CLASS,
+            env.getProperty("hibernate.current_session_context_class"));
     em.setJpaPropertyMap(properties);
 
     return em;
-  }
-  
-  /**
-   * Creates DataSources.
-   *
-   * @return properties
-   */
-  @PostConstruct
-  public DataSource userDataSource() {
-    String tenantName = "";
-    if (tenantName.isEmpty() || tenantName.isBlank()) {
-      tenantName = "persistence-tenant_emp_default";
-    }
-
-    return DataSourceBuilder.create()
-            .username(env.getProperty(tenantName.concat(".username")))
-            .password(env.getProperty(tenantName.concat(".password")))
-            .url(env.getProperty(tenantName.concat(".url")))
-            .driverClassName(env.getProperty("spring.datasource.driver-class-name"))
-            .build();
   }
   
   /**
@@ -119,9 +101,29 @@ public class MultiTenantConfig {
   public PlatformTransactionManager userTransactionManager() {
     final JpaTransactionManager transactionManager = new JpaTransactionManager();
     transactionManager.setEntityManagerFactory(userEntityManager(
-            new DataSourceBasedMultiTenantConnectionProviderImpl(),
-            new CurrentTenantIdentifierResolverImpl()).getObject()
+            (DataSourceBasedMultiTenantConnectionProviderImpl)applicationContext.getBean("datasourceBasedMultitenantConnectionProvider"),
+            (CurrentTenantIdentifierResolverImpl)applicationContext.getBean("currentTenantIdentifierResolver")).getObject()
     );
     return transactionManager;
   }
 }
+
+//  /**
+//   * Creates DataSources.
+//   *
+//   * @return properties
+//   */
+//  @PostConstruct
+//  public DataSource userDataSource() {
+//    String tenantName = "";
+//    if (tenantName.isEmpty() || tenantName.isBlank()) {
+//      tenantName = "persistence-tenant_emp_default";
+//    }
+//
+//    return DataSourceBuilder.create()
+//            .username(env.getProperty(tenantName.concat(".username")))
+//            .password(env.getProperty(tenantName.concat(".password")))
+//            .url(env.getProperty(tenantName.concat(".url")))
+//            .driverClassName(env.getProperty("spring.datasource.driver-class-name"))
+//            .build();
+//  }
