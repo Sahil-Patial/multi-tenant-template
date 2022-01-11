@@ -85,8 +85,7 @@ public class MultiTenantConfig {
             .MULTI_TENANT_IDENTIFIER_RESOLVER, tenantResolver);
     properties.put("hibernate.hbm2ddl.auto", env.getProperty("hibernate.hbm2ddl.auto"));
     properties.put("hibernate.dialect", env.getProperty("hibernate.dialect"));
-    properties.put(org.hibernate.cfg.Environment.CURRENT_SESSION_CONTEXT_CLASS,
-            env.getProperty("hibernate.current_session_context_class"));
+
     em.setJpaPropertyMap(properties);
 
     return em;
