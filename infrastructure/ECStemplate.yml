@@ -1,0 +1,265 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: MT CloudFormation template to launch ECS cluster.
+
+Parameters:
+  Environment:
+    Description: Tag - Environment the resources should be associated with.
+    Type: String
+    Default: dev
+    AllowedValues: ['dev', 'qa', 'demo', 'prod']
+  ECRRepoUri:
+    Description: The ECR repo uri
+    Type: String
+    Default: '001082169132.dkr.ecr.us-east-1.amazonaws.com/mt-template-poc:latest'
+  ProjectPrefix:
+    Description: Name of the project to which the ECS cluster belongs to.
+    Type: String
+    Default: mt
+  ResourcePrefix:
+    Description: Name of the project to which the ECS cluster belongs to.
+    Type: String
+    Default: template
+  Contact:  
+    Description: Tag - Contact for stack owner(s).
+    Type: String
+    Default: sahil.patial@datagrokr.com
+    ConstraintDescription: Must be a valid email address
+  VpcId:
+    Description: The VPC ID to use when setting up the ELB
+    Type: String
+    Default: 'vpc-b7cadbcf'
+  PublicSubnet1Id:
+    Description: The public subnet 1 ID to use when setting up the ELB
+    Type: String
+    Default: 'subnet-255ea12a'
+  PublicSubnet2Id:
+    Description: The public subnet 2 ID to use when setting up the ELB
+    Type: String
+    Default: 'subnet-e2fc8edd'
+  HostedZoneId:
+    Description: MT ECS Cluster ELB Hosted Zone ID
+    Type: String
+    Default: 'Z044821937CL1SEAM9GMF'
+  ELBCanonicalHostedZoneId:
+    Description: MT ECS Cluster ELB Canonical Hosted Zone ID
+    Type: String
+    Default: 'Z044821937CL1SEAM9GMF'
+  ELBDNSName:
+    Description: MT ECS Cluster ELB DNS Name
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/mt/dev/elb/shared-elb-dns-name'
+  ELBListenerArn:
+    Description: MT ECS Cluster ELB Arn
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/mt/dev/elb/shared-elb-listener-arn'
+  ELBSecurityGroupId:
+    Description: MT ECS Cluster ELB Security Group Id
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/mt/dev/elb/shared-elb-security-group-id'
+
+Mappings:
+
+  Route53Records:
+    us-east-1:
+      dev: 'dev-multitenant-template.rewritepoc.com'
+      qa: 'qa-multitenant-template.rewritepoc.com'
+      demo: 'demo-multitenant-template.rewritepoc.com'
+      prod: 'multitenant-template.rewritepoc.com'
+
+Resources:
+
+  ECSLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '${ProjectPrefix}-service-${Environment}'
+
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectPrefix}-execution-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+      - PolicyName: !Sub '${Environment}-${ProjectPrefix}-scheduler-execution'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: CloudWatchLogPermissions
+            Effect: Allow
+            Action: 
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+            Resource:
+              - '*'
+          - Sid: ECRPermissions
+            Effect: Allow
+            Action: 
+                - 'ecr:GetAuthorizationToken'
+                - 'ecr:BatchCheckLayerAvailability'
+                - 'ecr:GetDownloadUrlForLayer'
+                - 'ecr:BatchGetImage'
+            Resource:
+              - '*'
+  
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectPrefix}-task-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+      - PolicyName: !Sub '${Environment}-${ProjectPrefix}-task-policy'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: CloudWatchLogPermissions
+            Effect: Allow
+            Action: 
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+            Resource:
+              - '*'
+          - Sid: S3Permissions
+            Effect: Allow
+            Action:
+                - 's3:*'
+            Resource:
+              - '*'
+          - Sid: AthenaPermissions
+            Effect: Allow
+            Action: 
+                - 'athena:*'
+            Resource:
+              - '*'
+          - Sid: GluePermissions
+            Effect: Allow
+            Action: 
+                - 'glue:*'
+            Resource:
+              - '*'
+
+  EcsTaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${ProjectPrefix}-${Environment}'
+      GroupDescription: Security group for multitenant LB
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          Description: Access from multitenant ECS Cluster ELB
+          SourceSecurityGroupId: !Ref ELBSecurityGroupId
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          Description: Debug access from anywhere
+          CidrIp: 0.0.0.0/0
+
+  ECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub '${ProjectPrefix}-${Environment}'
+      Cpu: 1024
+      Memory: 2048
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !Ref ExecutionRole
+      ContainerDefinitions:
+        - Name: !Sub '${ProjectPrefix}-container-definition-${Environment}'
+          Environment:
+            - Name: ENV_TYPE
+              Value: !Ref Environment
+            - Name: LOG4J_FORMAT_MSG_NO_LOOKUPS
+              Value: true
+          Image: !Ref ECRRepoUri
+          PortMappings:
+            -   ContainerPort: 80
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref ECSLogGroup
+              awslogs-stream-prefix: ecs
+      RequiresCompatibilities:
+        - FARGATE
+      TaskRoleArn: !Ref TaskRole
+
+##############################################################################
+# ELB Setup
+##############################################################################
+
+  MTTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${ProjectPrefix}-${Environment}-tg'
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /actuator/health
+      HealthCheckPort: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      Port: 80
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: load_balancing.algorithm.type
+          Value: least_outstanding_requests
+      TargetType: ip
+      UnhealthyThresholdCount: 5
+      VpcId: !Ref VpcId
+
+  ElasticLoadBalancerProdListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        -
+          TargetGroupArn: !Ref MTTargetGroup
+          Type: forward
+      Conditions:
+        - Field: 'host-header'
+          Values:
+            - !FindInMap [ Route53Records, !Ref 'AWS::Region', !Ref Environment ]
+      ListenerArn: !Ref ELBListenerArn
+      Priority: 111
+
+  MTPublicRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !FindInMap [ Route53Records, !Ref 'AWS::Region', !Ref Environment ]
+      Type: A
+      AliasTarget:
+        DNSName: !Ref ELBDNSName
+        HostedZoneId: !Ref ELBCanonicalHostedZoneId
+    DependsOn: MTTargetGroup
+
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub '${ProjectPrefix}-service-${Environment}'
+      Cluster: 
+        Fn::ImportValue: !Sub 'mt-${Environment}-ecs-export'
+      TaskDefinition: !Ref ECSTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets: 
+            - !Ref PublicSubnet1Id
+            - !Ref PublicSubnet2Id
+          SecurityGroups:
+            - !GetAtt EcsTaskSecurityGroup.GroupId
+      LoadBalancers:
+        - TargetGroupArn:
+            Ref: MTTargetGroup
+          ContainerPort: 80
+          ContainerName: !Sub '${ProjectPrefix}-container-definition-${Environment}'

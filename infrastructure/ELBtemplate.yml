@@ -1,0 +1,182 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for ECS cluster
+
+Parameters:
+  ProjectPrefix:
+    Description: Project prefix to use
+    Type: String
+    Default: mt
+  Contact:
+    Description: Contact info to use
+    Type: String
+    Default: sahil.patial@datagrokr.com
+  Environment:
+    Description: Tag - Environment the resources should be associated with.
+    Type: String
+    Default: dev
+    AllowedValues: ['dev', 'qa', 'demo', 'prod']
+  VpcId:
+    Description: The VPC ID to use when setting up the ELB
+    Type: String
+    Default: 'vpc-b7cadbcf'
+  PublicSubnet1Id:
+    Description: The public subnet 1 ID to use when setting up the ELB
+    Type: String
+    Default: 'subnet-255ea12a'
+  PublicSubnet2Id:
+    Description: The public subnet 2 ID to use when setting up the ELB
+    Type: String
+    Default: 'subnet-e2fc8edd'
+
+Resources:
+
+  MTCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+        ClusterName: !Sub 'mt-${Environment}-ecs'
+        Tags:
+          - Key: Environment
+            Value: !Ref Environment
+
+  ELBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${ProjectPrefix}-${Environment}-elb-security-group1'
+      GroupDescription: 'Security Group for the MT ELB.'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Access to MT ELB (https)
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectPrefix}-${Environment}-elb-security-group'
+        - Key: Contact
+          Value: !Ref Contact
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: ProjectPrefix
+          Value: !Ref ProjectPrefix
+      VpcId: !Ref VpcId
+
+  ELBSecurityGroupIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: 'Shared ELB Security Group Id'
+      Name: !Sub /${ProjectPrefix}/${Environment}/elb/shared-elb-security-group-id
+      Type: 'String'
+      Value: !Ref ELBSecurityGroup
+      Tags:
+        Environment: !Ref Environment
+        ProjectPrefix: !Ref ProjectPrefix
+        Contact: !Ref Contact
+
+  ElasticLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${ProjectPrefix}-${Environment}-shared-elb'
+      LoadBalancerAttributes:
+        - Key: 'idle_timeout.timeout_seconds'
+          Value: '120'
+      Subnets:
+        - !Ref PublicSubnet1Id
+        - !Ref PublicSubnet2Id
+      SecurityGroups:
+        - !Ref ELBSecurityGroup
+      Scheme: internet-facing
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectPrefix}-${Environment}-shared-elb'
+        - Key: Contact
+          Value: !Ref Contact
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: ProjectPrefix
+          Value: !Ref ProjectPrefix
+
+  ELBArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: 'Shared ELB Arn'
+      Name: !Sub /${ProjectPrefix}/${Environment}/elb/shared-elb-arn
+      Type: 'String'
+      Value: !Ref ElasticLoadBalancer
+      Tags:
+        Environment: !Ref Environment
+        ProjectPrefix: !Ref ProjectPrefix
+        Contact: !Ref Contact
+
+  ELBDNSNameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: 'Shared ELB DNS Name'
+      Name: !Sub /${ProjectPrefix}/${Environment}/elb/shared-elb-dns-name
+      Type: 'String'
+      Value: !GetAtt ElasticLoadBalancer.DNSName
+      Tags:
+        Environment: !Ref Environment
+        ProjectPrefix: !Ref ProjectPrefix
+        Contact: !Ref Contact
+
+  ELBCanonicalHostedZoneIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: 'Shared ELB Canonical Hosted Zone ID'
+      Name: !Sub /${ProjectPrefix}/${Environment}/elb/shared-elb-canonical-hosted-zone-id
+      Type: 'String'
+      Value: !GetAtt ElasticLoadBalancer.CanonicalHostedZoneID
+      Tags:
+        Environment: !Ref Environment
+        ProjectPrefix: !Ref ProjectPrefix
+        Contact: !Ref Contact
+
+  ElasticLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      # Certificates:
+      #   - CertificateArn: !Join ['', [ 'arn:aws:acm:', !Ref 'AWS::Region',':', !Ref 'AWS::AccountId', ':certificate/', '180db7ac-8cbe-4446-8f83-285ecbe35b19']]
+      DefaultActions:
+        - TargetGroupArn: !Ref DefaultEmptyTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref ElasticLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  ELBListenerArn:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: 'Shared ELB Listener Arn (https)'
+      Name: !Sub /${ProjectPrefix}/${Environment}/elb/shared-elb-listener-arn
+      Type: 'String'
+      Value: !Ref ElasticLoadBalancerListener
+      Tags:
+        Environment: !Ref Environment
+        ProjectPrefix: !Ref ProjectPrefix
+        Contact: !Ref Contact
+
+  DefaultEmptyTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${ProjectPrefix}-${Environment}-default-target-group1'
+      Port: 80
+      Protocol: HTTP
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectPrefix}-${Environment}-elb-default-target-group'
+        - Key: Contact
+          Value: !Ref Contact
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: ProjectPrefix
+          Value: !Ref ProjectPrefix
+      TargetType: ip
+      VpcId: !Ref VpcId
+
+Outputs:
+  MTClusterExport:
+    Description: ECS cluster arn.
+    Value: !GetAtt MTCluster.Arn
+    Export:
+      Name: !Sub 'mt-${Environment}-ecs-export'
