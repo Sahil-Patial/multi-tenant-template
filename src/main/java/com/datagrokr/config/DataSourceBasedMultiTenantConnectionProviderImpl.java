@@ -80,10 +80,10 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
 
       HikariDataSource hikariDs = new HikariDataSource();
       hikariDs.setDataSource(dsObject);
-      hikariDs.setIdleTimeout(20000);
-      hikariDs.setMaximumPoolSize(250);
-      hikariDs.setMinimumIdle(100);
-      hikariDs.setLeakDetectionThreshold(20000);
+      //hikariDs.setIdleTimeout(20000);
+      //hikariDs.setMaximumPoolSize(250);
+      //hikariDs.setMinimumIdle(100);
+      //hikariDs.setLeakDetectionThreshold(20000);
       DataSource ds = hikariDs.getDataSource();
 
       dataSourcesMtApp.put(tenant, ds);
@@ -100,10 +100,10 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
 
     HikariDataSource hikariDs = new HikariDataSource();
     hikariDs.setDataSource(dsObject);
-    hikariDs.setIdleTimeout(20000);
-    hikariDs.setMaximumPoolSize(200);
-    hikariDs.setMinimumIdle(50);
-    hikariDs.setLeakDetectionThreshold(20000);
+    //hikariDs.setIdleTimeout(20000);
+    //hikariDs.setMaximumPoolSize(200);
+    //hikariDs.setMinimumIdle(50);
+    //hikariDs.setLeakDetectionThreshold(20000);
 
     return hikariDs.getDataSource();
   }
