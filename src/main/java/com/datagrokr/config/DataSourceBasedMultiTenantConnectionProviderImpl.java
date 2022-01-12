@@ -41,7 +41,7 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
     if (dataSourcesMtApp.isEmpty()) {
       readDataSource();
       if (dataSourcesMtApp.isEmpty()) {
-        return defaultDataSource();
+        return DataSourceBuilder.create().build();
       }
     }
     return this.dataSourcesMtApp.values().iterator().next();
@@ -54,7 +54,7 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
     }
 
     if (!this.dataSourcesMtApp.containsKey(tenantIdentifier)) {
-      return defaultDataSource();
+      return DataSourceBuilder.create().build();
     }
     return this.dataSourcesMtApp.get(tenantIdentifier);
   }
