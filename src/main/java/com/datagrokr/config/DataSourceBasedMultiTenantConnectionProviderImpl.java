@@ -1,10 +1,12 @@
 package com.datagrokr.config;
 
+import com.datagrokr.controller.EmployeeController;
+import com.datagrokr.util.AwsSecretsManagerUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.hibernate.MultiTenancyStrategy;
 import org.hibernate.engine.jdbc.connections.spi.AbstractDataSourceBasedMultiTenantConnectionProviderImpl;
-import org.slf4j.Logger;
+import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -14,7 +16,10 @@ import org.springframework.core.env.Environment;
 import javax.sql.DataSource;
 import javax.xml.crypto.Data;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
 
 /**
  * Provides connection per tenant
@@ -27,7 +32,7 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
   @Autowired
   private Environment env;
 
-  private static final Logger LOG = LoggerFactory.getLogger(DataSourceBasedMultiTenantConnectionProviderImpl.class);
+  private static Logger logger = Logger.getLogger(DataSourceBasedMultiTenantConnectionProviderImpl.class.getName());
 
   private static final long serialVersionUID = 1L;
 
@@ -38,12 +43,13 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
 
   @Override
   protected DataSource selectAnyDataSource() {
-    if (dataSourcesMtApp.isEmpty()) {
-      readDataSource();
       if (dataSourcesMtApp.isEmpty()) {
-        return DataSourceBuilder.create().build();
+        readDataSource();
+        if (dataSourcesMtApp.isEmpty()) {
+          return DataSourceBuilder.create().build();
+        }
       }
-    }
+
     return this.dataSourcesMtApp.values().iterator().next();
   }
 
@@ -61,51 +67,79 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
 
   @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
           justification = "Already added a null check")
-  private void readDataSource(){
-    String tenantNames = "";
-    if(env!=null && env.getProperty("tenant-names")!=null) {
-      tenantNames = Objects.requireNonNull(env.getProperty("tenant-names"));
-    }
-    String[] tenantDbs = tenantNames.isEmpty()? new String[0]:tenantNames.split(Pattern.quote("|"));
+  private void readDataSource() {
+      String tenantNames = "";
+      if (env != null && env.getProperty("tenant-names") != null) {
+        tenantNames = Objects.requireNonNull(env.getProperty("tenant-names"));
+      }
+      String[] tenantDbs = tenantNames.isEmpty() ? new String[0] : tenantNames.split(Pattern.quote("|"));
 
-    for (String tenant : tenantDbs) {
-      tenant = "persistence-" + tenant;
+      try
+      {
+        // Fetch credentials from aws secret key manager
+        String secretName = "dev/dgcoipoc";
+        AwsSecretsManagerUtil awsSecretsManagerUtil = new AwsSecretsManagerUtil();
+        JSONObject obj = new JSONObject(awsSecretsManagerUtil.fetchDBCreds(secretName));
+
+        String username = obj.getString("username");
+        String password = obj.getString("password");
+
+        for (String tenant : tenantDbs) {
+          tenant = "persistence-" + tenant;
+
+          DataSource dsObject = DataSourceBuilder.create()
+                  .username(username)
+                  .password(password)
+                  .url(env.getProperty(tenant.concat(".url")))
+                  .driverClassName(env.getProperty("spring.datasource.driver-class-name"))
+                  .build();
+
+          HikariDataSource hikariDs = new HikariDataSource();
+          hikariDs.setDataSource(dsObject);
+          //hikariDs.setIdleTimeout(20000);
+          //hikariDs.setMaximumPoolSize(250);
+          //hikariDs.setMinimumIdle(100);
+          //hikariDs.setLeakDetectionThreshold(20000);
+          DataSource ds = hikariDs.getDataSource();
+
+          dataSourcesMtApp.put(tenant, ds);
+        }
+    }
+    catch(Exception e){
+      logger.log(Level.SEVERE, "Encountered an exception :{0}", e.getMessage());
+    }
+  }
+
+  private DataSource defaultDataSource() {
+    try {
+      // Fetch credentials from aws secret key manager
+      String secretName = "dev/dgcoipoc";
+      AwsSecretsManagerUtil awsSecretsManagerUtil = new AwsSecretsManagerUtil();
+      JSONObject obj = new JSONObject(awsSecretsManagerUtil.fetchDBCreds(secretName));
+
+      String username = obj.getString("username");
+      String password = obj.getString("password");
 
       DataSource dsObject = DataSourceBuilder.create()
-              .username(env.getProperty(tenant.concat(".username")))
-              .password(env.getProperty(tenant.concat(".password")))
-              .url(env.getProperty(tenant.concat(".url")))
+              .username(username)
+              .password(password)
+              .url(env.getProperty("persistence-tenant_emp_default.url"))
               .driverClassName(env.getProperty("spring.datasource.driver-class-name"))
               .build();
 
       HikariDataSource hikariDs = new HikariDataSource();
       hikariDs.setDataSource(dsObject);
       //hikariDs.setIdleTimeout(20000);
-      //hikariDs.setMaximumPoolSize(250);
-      //hikariDs.setMinimumIdle(100);
+      //hikariDs.setMaximumPoolSize(200);
+      //hikariDs.setMinimumIdle(50);
       //hikariDs.setLeakDetectionThreshold(20000);
-      DataSource ds = hikariDs.getDataSource();
 
-      dataSourcesMtApp.put(tenant, ds);
+      return hikariDs.getDataSource();
     }
-  }
-
-  private DataSource defaultDataSource() {
-    DataSource dsObject = DataSourceBuilder.create()
-            .username(env.getProperty("persistence-tenant_emp_default.username"))
-            .password(env.getProperty("persistence-tenant_emp_default.password"))
-            .url(env.getProperty("persistence-tenant_emp_default.url"))
-            .driverClassName(env.getProperty("spring.datasource.driver-class-name"))
-            .build();
-
-    HikariDataSource hikariDs = new HikariDataSource();
-    hikariDs.setDataSource(dsObject);
-    //hikariDs.setIdleTimeout(20000);
-    //hikariDs.setMaximumPoolSize(200);
-    //hikariDs.setMinimumIdle(50);
-    //hikariDs.setLeakDetectionThreshold(20000);
-
-    return hikariDs.getDataSource();
+    catch(Exception e){
+      logger.log(Level.SEVERE, "Encountered an exception :{0}", e.getMessage());
+      return null;
+    }
   }
 
   private String initializeTenantIfLost(String tenantIdentifier) {
