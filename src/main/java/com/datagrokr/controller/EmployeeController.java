@@ -2,7 +2,7 @@ package com.datagrokr.controller;
 
 import com.datagrokr.config.DbContextHolder;
 import com.datagrokr.repository.EmployeeRepository;
-import com.datagrokr.repository.model.Employee;
+import com.datagrokr.model.Employee;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.transaction.Transactional;
 
 /**
  * Controller class with rest endpoints.

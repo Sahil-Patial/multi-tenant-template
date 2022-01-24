@@ -1,10 +1,8 @@
 package com.datagrokr.repository;
 
-import com.datagrokr.repository.model.Employee;
+import com.datagrokr.model.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
-import javax.transaction.Transactional;
 
 /**
  * Repository class containing various JPA crud methods.

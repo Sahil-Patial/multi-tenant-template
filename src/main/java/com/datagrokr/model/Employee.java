@@ -1,6 +1,4 @@
-package com.datagrokr.repository.model;
-
-import org.springframework.transaction.annotation.Transactional;
+package com.datagrokr.model;
 
 import java.io.Serializable;
 import javax.persistence.*;
@@ -11,7 +9,6 @@ import javax.persistence.*;
  * @author sahil
  */
 @Entity
-@Transactional
 @Table(name = "employee")
 public class Employee extends BaseEntity implements Serializable {
   @Id

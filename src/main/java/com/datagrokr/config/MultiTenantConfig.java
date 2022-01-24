@@ -71,7 +71,7 @@ public class MultiTenantConfig {
           @Qualifier("currentTenantIdentifierResolver")
               CurrentTenantIdentifierResolver tenantResolver) {
     final LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
-    em.setPackagesToScan("com.datagrokr.repository.model");
+    em.setPackagesToScan("com.datagrokr.model");
 
     final HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
     em.setJpaVendorAdapter(vendorAdapter);
