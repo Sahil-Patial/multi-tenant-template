@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.datagrokr.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class EmployeeController {
     
   @Autowired
-  private EmployeeService employeeService;
+  private EmployeeRepository employeeRepository;
 
   @Autowired
   private ApplicationContext applicationContext;
@@ -53,7 +53,7 @@ public class EmployeeController {
       StringBuilder responseStr = new StringBuilder();
       DbContextHolder.setCurrentDb(tenantStr);
 
-      List<Employee> employeeList = employeeService.findAll();
+      List<Employee> employeeList = employeeRepository.findAll();
       for (Employee e : employeeList) {
         responseStr.append(e.empId + " |" + e.empName + System.lineSeparator());
       }
@@ -69,9 +69,6 @@ public class EmployeeController {
       logger.log(Level.SEVERE, 
               "Exiting from {0} with an error {1}", new Object[]{methodName, e});
       return "Failure";
-    }
-    finally {
-
     }
   }
   
@@ -90,9 +87,17 @@ public class EmployeeController {
     try {
       String tenantStr = "persistence-tenant_emp_" + env;
       DbContextHolder.setCurrentDb(tenantStr);
+      Employee empResponse;
 
-      Employee empResponse = employeeService.save(employee);
-
+      try {
+        empResponse = employeeRepository.save(employee);
+      }
+      catch(ObjectOptimisticLockingFailureException e) {
+        logger.log(Level.SEVERE,
+                "Somebody has already updated the amount for employeeId:{} in concurrent transaction. Will try again",
+                employee.empId);
+        empResponse = employeeRepository.save(employee);
+      }
       logger.log(Level.INFO, 
               "Employee details were stored using POST method from {0} tenant", env);
       logger.log(Level.FINER, "Exiting {}", methodName);
