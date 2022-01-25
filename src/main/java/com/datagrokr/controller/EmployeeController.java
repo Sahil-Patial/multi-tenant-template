@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.datagrokr.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
@@ -28,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class EmployeeController {
     
   @Autowired
-  private EmployeeRepository employeeRepository;
+  private EmployeeService employeeService;
 
   @Autowired
   private ApplicationContext applicationContext;
@@ -52,7 +53,7 @@ public class EmployeeController {
       StringBuilder responseStr = new StringBuilder();
       DbContextHolder.setCurrentDb(tenantStr);
 
-      List<Employee> employeeList = employeeRepository.findAll();
+      List<Employee> employeeList = employeeService.findAll();
       for (Employee e : employeeList) {
         responseStr.append(e.empId + " |" + e.empName + System.lineSeparator());
       }
@@ -90,7 +91,7 @@ public class EmployeeController {
       String tenantStr = "persistence-tenant_emp_" + env;
       DbContextHolder.setCurrentDb(tenantStr);
 
-      Employee empResponse = employeeRepository.save(employee);
+      Employee empResponse = employeeService.save(employee);
 
       logger.log(Level.INFO, 
               "Employee details were stored using POST method from {0} tenant", env);

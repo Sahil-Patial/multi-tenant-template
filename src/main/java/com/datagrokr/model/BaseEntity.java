@@ -13,8 +13,8 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 
 @MappedSuperclass
-public abstract class BaseEntity {
-    
+public abstract class BaseEntity extends VersionBaseEntity {
+
   @Column(name = "created_at", updatable = false)
   @CreationTimestamp
   private LocalDateTime createdAt;
