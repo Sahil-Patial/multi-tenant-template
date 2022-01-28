@@ -187,7 +187,8 @@ Resources:
             Options:
               awslogs-region: !Ref AWS::Region
               awslogs-group: !Ref ECSLogGroup
-              awslogs-stream-prefix: ecs
+              awslogs-stream-prefix: ecs/
+              awslogs-create-group: true
       RequiresCompatibilities:
         - FARGATE
       TaskRoleArn: !Ref TaskRole
