@@ -8,7 +8,7 @@
         "collect_list": [
           {
             "file_path": "/home/log/Mt-template.log",
-            "log_group_name": "Mt-template-error-log",
+            "log_group_name": "mt-service-dev",
             "log_stream_name": "{instance_id}"
           }
         ]
