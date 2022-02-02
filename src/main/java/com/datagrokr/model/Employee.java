@@ -19,4 +19,26 @@ public class Employee extends BaseEntity implements Serializable {
   
   @Column(name = "emp_name")
   public String empName;
+  
+  public Employee(){}
+  
+  public Employee(String empName){
+    this.empName = empName;
+  }
+  
+  public Integer getEmpId() {
+    return empId;
+  }
+  
+  public void setEmpId(Integer empId) {
+    this.empId = empId;
+  }
+  
+  public String getEmpName() {
+    return empName;
+  }
+  
+  public void setEmpName(String empName) {
+    this.empName = empName;
+  }
 }
