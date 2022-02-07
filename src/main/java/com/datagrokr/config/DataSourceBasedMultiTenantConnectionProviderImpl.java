@@ -86,7 +86,7 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
 
         for (String tenant : tenantDbs) {
           tenant = "persistence-" + tenant;
-
+          String dummy = env.getProperty(tenant.concat(".url"));
           DataSource dsObject = DataSourceBuilder.create()
                   .username(username)
                   .password(password)
