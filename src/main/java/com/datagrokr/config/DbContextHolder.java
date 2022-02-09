@@ -7,7 +7,7 @@ package com.datagrokr.config;
  * @author sahil
  */
 public class DbContextHolder {
-  private static String DEFAULT_TENANT_ID = "persistence-tenant_emp_dev";
+  private static String DEFAULT_TENANT_ID = "dev";
   private static final ThreadLocal<String> contextHolder = new ThreadLocal<>();
 
   static {
