@@ -41,24 +41,22 @@ public class EmployeeController {
   private ApplicationContext applicationContext;
 
   private static Logger logger = Logger.getLogger(EmployeeController.class.getName());
-  private String tenantPrefix = "persistence-tenant_emp_";
 
   public EmployeeController() {}
   
   /**
    * Get method to fetch all data.
    *
-   * @param env tenants
+   * @param tenantEnv tenants
    * @return data or error
    */
   @GetMapping("/findAll")
-  public ResponseEntity<?> findAll(@RequestHeader(name = "X-TENANT-ID") String env) { //  See Headers
+  public ResponseEntity<?> findAll(@RequestHeader(name = "X-TENANT-ID") String tenantEnv) { //  See Headers
     final String methodName = "findAll()";
     logger.log(Level.FINER, "Entering {}", methodName);
     try {
-      String tenantStr = tenantPrefix + env;
       StringBuilder responseStr = new StringBuilder();
-      DbContextHolder.setCurrentDb(tenantStr);
+      DbContextHolder.setCurrentDb(tenantEnv);
 
       List<Employee> employeeList = Collections.EMPTY_LIST;
       try {
@@ -74,7 +72,7 @@ public class EmployeeController {
       }
 
       logger.log(Level.INFO, 
-              "Employee details were retrieved using GET method from {0} tenant", env);
+              "Employee details were retrieved using GET method from {0} tenant", tenantEnv);
       logger.log(Level.FINER, "Exiting {}", methodName);
 
       System.out.println(responseStr.toString());
@@ -95,18 +93,17 @@ public class EmployeeController {
   /**
    * Post method to save data.
    *
-   * @param env tenants
+   * @param tenantEnv tenants
    * @param employee data to be saved
    * @return data or error
    */
   @PostMapping("/save")
-  public ResponseEntity<?> save(@RequestHeader(name = "X-TENANT-ID") String env, 
+  public ResponseEntity<?> save(@RequestHeader(name = "X-TENANT-ID") String tenantEnv,
           @Valid @RequestBody Employee employee) { //  See Headers
     final String methodName = "save()";
     logger.log(Level.FINER, "Entering {}", methodName);
     try {
-      String tenantStr = tenantPrefix + env;
-      DbContextHolder.setCurrentDb(tenantStr);
+      DbContextHolder.setCurrentDb(tenantEnv);
       Employee empResponse;
 
       try {
@@ -119,7 +116,7 @@ public class EmployeeController {
         empResponse = employeeRepository.save(employee);
       }
       logger.log(Level.INFO, 
-              "Employee details were stored using POST method from {0} tenant", env);
+              "Employee details were stored using POST method from {0} tenant", tenantEnv);
       logger.log(Level.FINER, "Exiting {}", methodName);
 
       return new ResponseEntity<>(empResponse, HttpStatus.CREATED);

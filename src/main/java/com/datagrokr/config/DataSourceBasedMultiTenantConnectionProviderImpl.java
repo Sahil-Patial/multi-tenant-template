@@ -36,7 +36,7 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
 
   private static final long serialVersionUID = 1L;
 
-  private static final String DEFAULT_TENANT_ID = "persistence-tenant_emp_dev";
+  private static final String DEFAULT_TENANT_ID = "dev";
 
   private transient HashMap<String, DataSource> dataSourcesMtApp = new HashMap<>();
 
@@ -83,8 +83,6 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
         String password = awsSecretsManager.password;
 
         for (String tenant : tenantDbs) {
-          tenant = "persistence-" + tenant;
-          String dummy = env.getProperty(tenant.concat(".url"));
           DataSource dsObject = DataSourceBuilder.create()
                   .username(username)
                   .password(password)

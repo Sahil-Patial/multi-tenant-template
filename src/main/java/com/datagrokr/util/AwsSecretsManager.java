@@ -25,8 +25,8 @@ public class AwsSecretsManager {
 
     private static Logger logger = Logger.getLogger(AwsSecretsManager.class.getName());
 
-    public final String endpoint = "secretsmanager.us-east-2.amazonaws.com";
-    public final String region = "us-east-2";
+    private String endpoint = "secretsmanager.us-east-2.amazonaws.com";
+    private String region = "us-east-2";
 
     public final String username;
     public final String password;
