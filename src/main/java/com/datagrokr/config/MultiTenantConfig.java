@@ -106,23 +106,3 @@ public class MultiTenantConfig {
     return transactionManager;
   }
 }
-
-//  /**
-//   * Creates DataSources.
-//   *
-//   * @return properties
-//   */
-//  @PostConstruct
-//  public DataSource userDataSource() {
-//    String tenantName = "";
-//    if (tenantName.isEmpty() || tenantName.isBlank()) {
-//      tenantName = "persistence-tenant_emp_default";
-//    }
-//
-//    return DataSourceBuilder.create()
-//            .username(env.getProperty(tenantName.concat(".username")))
-//            .password(env.getProperty(tenantName.concat(".password")))
-//            .url(env.getProperty(tenantName.concat(".url")))
-//            .driverClassName(env.getProperty("spring.datasource.driver-class-name"))
-//            .build();
-//  }

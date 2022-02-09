@@ -9,7 +9,7 @@ import org.hibernate.context.spi.CurrentTenantIdentifierResolver;
  */
 public class CurrentTenantIdentifierResolverImpl implements CurrentTenantIdentifierResolver {
 
-  private static final String DEFAULT_TENANT_ID = "persistence-tenant_emp_default";
+  private static final String DEFAULT_TENANT_ID = "persistence-tenant_emp_dev";
   
   @Override
     public String resolveCurrentTenantIdentifier() {

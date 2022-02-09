@@ -41,6 +41,7 @@ public class EmployeeController {
   private ApplicationContext applicationContext;
 
   private static Logger logger = Logger.getLogger(EmployeeController.class.getName());
+  private String tenantPrefix = "persistence-tenant_emp_";
 
   public EmployeeController() {}
   
@@ -55,7 +56,7 @@ public class EmployeeController {
     final String methodName = "findAll()";
     logger.log(Level.FINER, "Entering {}", methodName);
     try {
-      String tenantStr = "persistence-tenant_emp_" + env;
+      String tenantStr = tenantPrefix + env;
       StringBuilder responseStr = new StringBuilder();
       DbContextHolder.setCurrentDb(tenantStr);
 
@@ -104,7 +105,7 @@ public class EmployeeController {
     final String methodName = "save()";
     logger.log(Level.FINER, "Entering {}", methodName);
     try {
-      String tenantStr = "persistence-tenant_emp_" + env;
+      String tenantStr = tenantPrefix + env;
       DbContextHolder.setCurrentDb(tenantStr);
       Employee empResponse;
 

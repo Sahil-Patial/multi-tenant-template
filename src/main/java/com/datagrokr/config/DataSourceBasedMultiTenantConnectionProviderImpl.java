@@ -1,20 +1,17 @@
 package com.datagrokr.config;
 
-import com.datagrokr.controller.EmployeeController;
-import com.datagrokr.util.AwsSecretsManagerUtil;
+import com.datagrokr.util.AwsSecretsManager;
 import com.zaxxer.hikari.HikariDataSource;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.hibernate.MultiTenancyStrategy;
 import org.hibernate.engine.jdbc.connections.spi.AbstractDataSourceBasedMultiTenantConnectionProviderImpl;
 import org.json.JSONObject;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 import javax.sql.DataSource;
-import javax.xml.crypto.Data;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,9 +29,14 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
   @Autowired
   private Environment env;
 
+  @Autowired
+  AwsSecretsManager awsSecretsManager;
+
   private static Logger logger = Logger.getLogger(DataSourceBasedMultiTenantConnectionProviderImpl.class.getName());
 
   private static final long serialVersionUID = 1L;
+
+  private static final String DEFAULT_TENANT_ID = "persistence-tenant_emp_dev";
 
   private transient HashMap<String, DataSource> dataSourcesMtApp = new HashMap<>();
 
@@ -77,12 +79,8 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
       try
       {
         // Fetch credentials from aws secret key manager
-        String secretName = "dev/dgcoipoc";
-        AwsSecretsManagerUtil awsSecretsManagerUtil = new AwsSecretsManagerUtil();
-        JSONObject obj = new JSONObject(awsSecretsManagerUtil.fetchDBCreds(secretName));
-
-        String username = obj.getString("username");
-        String password = obj.getString("password");
+        String username = awsSecretsManager.username;
+        String password = awsSecretsManager.password;
 
         for (String tenant : tenantDbs) {
           tenant = "persistence-" + tenant;
@@ -113,17 +111,13 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl extends AbstractDa
   private DataSource defaultDataSource() {
     try {
       // Fetch credentials from aws secret key manager
-      String secretName = "dev/dgcoipoc";
-      AwsSecretsManagerUtil awsSecretsManagerUtil = new AwsSecretsManagerUtil();
-      JSONObject obj = new JSONObject(awsSecretsManagerUtil.fetchDBCreds(secretName));
-
-      String username = obj.getString("username");
-      String password = obj.getString("password");
+      String username = awsSecretsManager.username;
+      String password = awsSecretsManager.password;
 
       DataSource dsObject = DataSourceBuilder.create()
               .username(username)
               .password(password)
-              .url(env.getProperty("persistence-tenant_emp_default.url"))
+              .url(env.getProperty(DEFAULT_TENANT_ID +".url"))
               .driverClassName(env.getProperty("spring.datasource.driver-class-name"))
               .build();
 
