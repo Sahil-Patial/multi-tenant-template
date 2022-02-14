@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -40,6 +41,8 @@ public class EmployeeController {
   @Autowired
   private ApplicationContext applicationContext;
 
+  private ObjectMapper objectMapper = new ObjectMapper();
+
   private static Logger logger = Logger.getLogger(EmployeeController.class.getName());
 
   public EmployeeController() {}
@@ -67,9 +70,7 @@ public class EmployeeController {
                 "Some exception occured in concurrent transaction. Will try again");
         employeeList = employeeRepository.findAll();
       }
-      for (Employee e : employeeList) {
-        responseStr.append(e.empId + " |" + e.empName + System.lineSeparator());
-      }
+      responseStr.append(objectMapper.writeValueAsString(employeeList));
 
       logger.log(Level.INFO, 
               "Employee details were retrieved using GET method from {0} tenant", tenantEnv);
@@ -86,7 +87,7 @@ public class EmployeeController {
     catch (Exception e) {
       logger.log(Level.SEVERE, 
               "Exiting from {0} with an error {1}", new Object[]{methodName, e});
-      return new ResponseEntity<String>("Failure", HttpStatus.INTERNAL_SERVER_ERROR);
+      return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
   
@@ -103,6 +104,7 @@ public class EmployeeController {
     final String methodName = "save()";
     logger.log(Level.FINER, "Entering {}", methodName);
     try {
+      StringBuilder responseStr = new StringBuilder();
       DbContextHolder.setCurrentDb(tenantEnv);
       Employee empResponse;
 
@@ -119,7 +121,8 @@ public class EmployeeController {
               "Employee details were stored using POST method from {0} tenant", tenantEnv);
       logger.log(Level.FINER, "Exiting {}", methodName);
 
-      return new ResponseEntity<>(empResponse, HttpStatus.CREATED);
+      responseStr.append(objectMapper.writeValueAsString(empResponse));
+      return new ResponseEntity<>(responseStr.toString(), HttpStatus.CREATED);
     }
     catch(OptimisticLockingFailureException e){
       logger.log(Level.SEVERE, "Something went wrong while processing the request. {}", e.toString());
