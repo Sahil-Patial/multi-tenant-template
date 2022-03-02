@@ -45,6 +45,10 @@ public class MultiTenantDbImpl2Application {
     System.setProperty("aws.secretAccessKey", dotenv.get("AWS_SECRET_KEY"));
     String identityId = "us-east-1:4a41aa9c-f71d-4c13-9764-8a71ce9118cb";
     String userPoolId = "us-east-1_tEr8oQfHF";
+    String userName = "MichaelScott";
+    String email = "michaelscott@gmail.com";
+    String password = "Password1!";
+
     CognitoIdentityClient cognitoClient = CognitoIdentityClient.builder()
             .region(Region.US_EAST_1)
             .build();
@@ -53,8 +57,9 @@ public class MultiTenantDbImpl2Application {
             .build();
 
     GetCognitoUserCredentials getCognitoUserCredentials = new GetCognitoUserCredentials();
-    //getCognitoUserCredentials.getCredsForIdentity(cognitoClient, identityId);
+    getCognitoUserCredentials.createNewUser(cognitoIdentityClient, userPoolId, userName, email, password);
     getCognitoUserCredentials.listAllUserPoolClients(cognitoIdentityClient, userPoolId);
+    getCognitoUserCredentials.getCredsForIdentity(cognitoClient, identityId);
     cognitoClient.close();
     SpringApplication.run(MultiTenantDbImpl2Application.class, args);
   }
