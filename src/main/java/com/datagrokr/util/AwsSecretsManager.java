@@ -42,7 +42,7 @@ public class AwsSecretsManager {
 
     public String fetchDBCreds(String secretName) throws Exception {
         Dotenv dotenv = Dotenv.configure().load();
-        String awsAccessKey = dotenv.get("AWS_ACCESS_KEY");
+        String awsAccessKey = dotenv.get("AWS_ACCESS_KEY_ID");
         String awsSecretKey = dotenv.get("AWS_SECRET_KEY");
 
         AwsClientBuilder.EndpointConfiguration config = new AwsClientBuilder.EndpointConfiguration(endpoint, region);
