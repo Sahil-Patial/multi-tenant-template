@@ -25,8 +25,8 @@ public class AwsSecretsManager {
 
     private static Logger logger = Logger.getLogger(AwsSecretsManager.class.getName());
 
-    private String endpoint = "secretsmanager.us-east-2.amazonaws.com";
-    private String region = "us-east-2";
+    private String endpoint;
+    private String region;
 
     public final String username;
     public final String password;
@@ -34,6 +34,8 @@ public class AwsSecretsManager {
     @Autowired
     public AwsSecretsManager(Environment env) throws Exception {
         this.env = env;
+        this.region = env.getProperty("aws-region");
+        this.endpoint = env.getProperty("aws-secrets-endpoint");
         JSONObject obj = new JSONObject(fetchDBCreds(env.getProperty("secret-name")));
 
         username = obj.getString("username");
@@ -42,7 +44,7 @@ public class AwsSecretsManager {
 
     public String fetchDBCreds(String secretName) throws Exception {
         Dotenv dotenv = Dotenv.configure().load();
-        String awsAccessKey = dotenv.get("AWS_ACCESS_KEY");
+        String awsAccessKey = dotenv.get("AWS_ACCESS_KEY_ID");
         String awsSecretKey = dotenv.get("AWS_SECRET_KEY");
 
         AwsClientBuilder.EndpointConfiguration config = new AwsClientBuilder.EndpointConfiguration(endpoint, region);
